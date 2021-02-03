@@ -3,24 +3,15 @@ version: "3.3"
 services:
   proxy:
     build: .
-    image: decentralize/swarm-tcp-proxy
+    image: spuf/swarm-tcp-proxy
     environment:
       SERVICES: "app:8080"
       CONNECTION_TIMEOUT: 5m
     ports:
-      - target: 8080
-        published: 8080
-        protocol: tcp
-        mode: host
-    networks:
-      - backend
-    deploy:
-      mode: global
+      - "8080:8080"
+      - "3333:3333"
+    depends_on:
+      - app
 
   app:
     image: decentralize/proxy-responder
-    networks:
-      - backend
-
-networks:
-  backend:
