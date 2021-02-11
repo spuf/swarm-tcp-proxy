@@ -1,12 +1,9 @@
-FROM haproxy:2.2.8-alpine
+FROM haproxy:2.2-alpine
 
-ENV CONNECTION_TIMEOUT=5m
-ENV STATS_ADDR=0.0.0.0:3333
-ENV DISABLE_PROXY_PROTOCOL=""
-ENV ACCEPT_PROXY_PROTOCOL=""
+COPY --from=hairyhenderson/gomplate:v3-alpine /bin/gomplate /bin/gomplate
 
 COPY custom-entrypoint.sh /
-COPY haproxy/* /usr/local/etc/haproxy/
+COPY haproxy.cfg.tmpl /usr/local/etc/haproxy/haproxy.cfg.tmpl
 
 ENTRYPOINT ["/custom-entrypoint.sh"]
 CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]

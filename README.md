@@ -52,11 +52,3 @@ Other settings:
 
 * `DISABLE_PROXY_PROTOCOL`: do not use the proxy protocol (just forward data)
 * `CONNECTION_TIMEOUT`: connection timeout to client as well as server (default: "5m")
-
-### Deprecated syntax
-
-With the deprecated syntax, the proxy will front a single service while listening on port `8000`.
-
-* `SERVICE_NAME`: name of the connected Swarm service
-* `SERVICE_PORT`: port on the service which should be proxied
-

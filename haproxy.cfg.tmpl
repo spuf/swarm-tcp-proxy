@@ -1,0 +1,56 @@
+global
+  log fd@2 local2
+
+resolvers docker-dns
+  nameserver dns1 127.0.0.11:53
+  resolve_retries 3
+  timeout resolve 1s
+  timeout retry 1s
+  hold valid 1s
+
+{{ $connectionTimeout := env.Getenv "CONNECTION_TIMEOUT" "5s" -}}
+{{ $statsAddr := env.Getenv "STATS_ADDR" -}}
+{{ if $statsAddr -}}
+frontend fe_stats
+  bind {{ $statsAddr }}
+  default_backend be_stats
+  timeout client {{ $connectionTimeout }}
+  {{ if env.Getenv "STATS_LOG" -}}
+  log global
+  option tcplog
+  {{- end }}
+
+backend be_stats
+  mode http
+  stats enable
+  stats uri /
+  stats show-legends
+  stats show-node
+{{- end }}
+
+{{ range $key, $value := .Env -}}
+  {{ if and (strings.HasPrefix "SERVICE_" $key) (strings.HasSuffix "_ADDR" $key) -}}
+    {{ $name := strings.TrimPrefix "SERVICE_" (strings.TrimSuffix "_ADDR" $key) -}}
+    {{ $addr := env.Getenv (printf "SERVICE_%s_ADDR" $name) -}}
+    {{ $port := index (strings.SplitN ":" 2 $addr) 1 -}}
+    {{ $bindOption := env.Getenv (printf "SERVICE_%s_BIND_OPTION" $name) -}}
+    {{ $serverOption := env.Getenv (printf "SERVICE_%s_SERVER_OPTION" $name) -}}
+    {{ $log := env.Getenv (printf "SERVICE_%s_LOG" $name) -}}
+    {{ $timeout := env.Getenv (printf "SERVICE_%s_TIMEOUT" $name) $connectionTimeout }}
+frontend fe_{{ $name }}
+  {{ if $log -}}
+  log global
+  option tcplog
+  {{- end }}
+  bind 0.0.0.0:{{ $port }} {{ $bindOption }}
+  mode tcp
+  timeout client {{ $timeout }}
+  default_backend be_{{ $name }}
+
+backend be_{{ $name }}
+  mode tcp
+  timeout server {{ $timeout }}
+  timeout connect {{ $connectionTimeout }}
+  server {{ $name }} {{ $addr }} {{ $serverOption }} resolvers docker-dns
+    {{ end }}
+{{- end }}
